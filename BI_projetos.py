@@ -9,7 +9,7 @@ from app_instance import app
 COR_FUNDO = "#121E26"
 COR_CARD = "#192A35"
 COR_TEXTO = "#C2E0E7"
-COR_GRAFICO = px.colors.sequential.Teal
+COR_GRAFICO = px.colors.sequential.Oranges
 
 # Carregar dados
 df = pd.read_excel("Projetos.xlsx")
@@ -63,7 +63,7 @@ layout = dbc.Container([
                         'backgroundColor': "#263640",
                         'color': COR_TEXTO
                     },
-                    page_size=10,
+                    
                 ),
                 style={
                     "backgroundColor": COR_CARD,
@@ -169,7 +169,7 @@ def atualizar_graficos(dados_tabela):
         y="Quantidade",
         labels={"Status": "Status", "Quantidade": "Quantidade"},
         title="Composição de Status dos Projetos",
-        color_discrete_sequence=COR_GRAFICO
+        color_discrete_sequence=["#FB8C00", "#FB8C00", "#F57C00", "#EF6C00", "#E65100"]
     )
 
     fig_distribuicao = px.pie(
@@ -177,7 +177,7 @@ def atualizar_graficos(dados_tabela):
         names="Status",
         hole=0.5,
         title="Distribuição de Projetos por Status",
-        color_discrete_sequence=COR_GRAFICO
+        color_discrete_sequence=["#FFA726", "#FB8C00", "#F57C00", "#EF6C00", "#E65100"]
     )
 
     fig_percentual = px.bar(

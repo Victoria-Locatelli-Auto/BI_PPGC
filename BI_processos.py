@@ -75,14 +75,7 @@ layout = dbc.Container([
                     "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
                     "padding": "10px",
                     "marginBottom": "20px"
-                }), width=6),
-                dbc.Col(dbc.Card(dcc.Graph(id="grafico-instrucoes-processos"), style={
-                    "backgroundColor": "#192A35",
-                    "borderRadius": "15px",
-                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
-                    "padding": "10px",
-                    "marginBottom": "20px"
-                }), width=6),
+                }), width=12),  # Ocupa 100% da largura
             ]),
 
             dbc.Row([
@@ -110,7 +103,6 @@ layout = dbc.Container([
 @app.callback(
     Output("tabela-processos", "data"),
     Output("grafico-atividades-processos", "figure"),
-    Output("grafico-instrucoes-processos", "figure"),
     Output("grafico-entregas-processos", "figure"),
     Output("grafico-status-processos", "figure"),
     Input("filtro-setor-processos", "value"),
@@ -132,32 +124,26 @@ def atualizar_tudo(f_setor, f_resp, f_status):
     fig_ativ = px.bar(
         dff, x='Setores mapeados', y='Atividades mapeadas',
         title="Atividades Mapeadas por Setor", color='Setores mapeados',
-        text_auto=True, color_discrete_sequence=px.colors.sequential.Teal
-    )
-
-    # Gráfico Instruções Reestruturadas
-    fig_instr = px.bar(
-        dff, x='Instruçoes reestruturadas', y='Status', orientation='h',
-        title="Instr. Reestruturadas por Status", color='Status',
-        color_discrete_sequence=px.colors.sequential.Teal
+        text_auto=True, color_discrete_sequence=px.colors.sequential.Oranges
     )
 
     # Gráfico Entregas Concluídas por Etapa
     fig_entregas = px.bar(
         dff, x='Etapa / Entrega', title="Entregas Concluídas",
         color='Etapa / Entrega',
-        color_discrete_sequence=px.colors.sequential.Teal
+        color_discrete_sequence=px.colors.sequential.Oranges
     )
 
     # Gráfico Composição Status
     fig_status = px.pie(
         dff, names='Status', hole=0.5,
         title="Composição Status",
-        color_discrete_sequence=px.colors.sequential.Teal
+        color_discrete_sequence=["#FFA726", "#FB8C00", "#F57C00", "#EF6C00", "#E65100"]
+
     )
 
     # Estilo dos Gráficos (Dark Theme)
-    for fig in [fig_ativ, fig_instr, fig_entregas, fig_status]:
+    for fig in [fig_ativ, fig_entregas, fig_status]:
         fig.update_layout(
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
@@ -168,4 +154,4 @@ def atualizar_tudo(f_setor, f_resp, f_status):
             font=dict(size=12)
         )
 
-    return tabela, fig_ativ, fig_instr, fig_entregas, fig_status
+    return tabela, fig_ativ, fig_entregas, fig_status
