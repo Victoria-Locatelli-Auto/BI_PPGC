@@ -1,0 +1,17 @@
+body {
+    background-color: #121E26 !important;
+    color: #C2E0E7 !important;
+}
+
+.dash-table-container .dash-spreadsheet-container {
+    background-color: #192A35 !important;
+}
+
+.dash-dropdown {
+    background-color: #192A35 !important;
+    color: #C2E0E7 !important;
+}
+
+.dash-dropdown .Select-menu-outer {
+    background-color: #263640 !important;
+}

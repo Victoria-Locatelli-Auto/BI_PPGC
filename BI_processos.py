@@ -1,7 +1,6 @@
 import pandas as pd
 from dash import dcc, html, dash_table
 import plotly.express as px
-import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from app_instance import app
@@ -10,77 +9,113 @@ from app_instance import app
 df = pd.read_excel("processos.xlsx")
 df["% Concluído"] = pd.to_numeric(df["% Concluído"], errors='coerce')
 
+# Layout
 layout = dbc.Container([
-    # Título centralizado
     dbc.Row([
-        dbc.Col(html.H2("ANDAMENTO EQUIPE DE PROCESSOS", className="text-center text-dark fw-bold mb-4"))
+        dbc.Col(html.H2("B.I PPGC - PROCESSOS", className="text-center fw-bold text-light mb-4"))
     ]),
 
-    # Filtros na lateral (estilizado como sidebar)
     dbc.Row([
+        # Sidebar
         dbc.Col([
             html.Div([
-                html.Label("Setor", className="fw-bold text-white mb-1"),
+                html.Label("Setor", className="fw-bold text-light"),
                 dcc.Dropdown(
                     options=[{"label": s, "value": s} for s in sorted(df['Setores mapeados'].dropna().unique())],
-                    id="filtro-setor", placeholder="Todos", multi=True, className="mb-3"
+                    id="filtro-setor-processos", placeholder="Todos", multi=True, className="mb-3"
                 ),
-                html.Label("Responsável", className="fw-bold text-white mb-1"),
+                html.Label("Responsável", className="fw-bold text-light"),
                 dcc.Dropdown(
                     options=[{"label": r, "value": r} for r in sorted(df['Responsável'].dropna().unique())],
-                    id="filtro-responsavel", placeholder="Todos", multi=True, className="mb-3"
+                    id="filtro-responsavel-processos", placeholder="Todos", multi=True, className="mb-3"
                 ),
-                html.Label("Status Entrega", className="fw-bold text-white mb-1"),
+                html.Label("Status Entrega", className="fw-bold text-light"),
                 dcc.Dropdown(
                     options=[{"label": e, "value": e} for e in sorted(df['Status'].dropna().unique())],
-                    id="filtro-status", placeholder="Todos", multi=True
+                    id="filtro-status-processos", placeholder="Todos", multi=True
                 )
-            ], style={"backgroundColor": "#007B8A", "padding": "15px", "borderRadius": "10px"})
+            ], style={"backgroundColor": "#0E1A21", "padding": "20px", "borderRadius": "10px"})
         ], width=2),
 
+        # Conteúdo principal
         dbc.Col([
-            # Tabela principal
-            dash_table.DataTable(
-                id="tabela-processos",
-                columns=[
-                    {"name": "ID", "id": "ID"},
-                    {"name": "Setores mapeados", "id": "Setores mapeados"},
-                    {"name": "Qtd Atividades mapeadas por setor", "id": "Atividades mapeadas"},
-                    {"name": "Instruções reestruturadas", "id": "Instruçoes reestruturadas"},
-                    {"name": "Qtd entrevistados", "id": "Qtd colaboradores entrevistados"},
-                    {"name": "Responsável", "id": "Responsável"},
-                    {"name": "% Concluído", "id": "% Concluído", "type": "numeric", "format": {"specifier": ".0f"}},
-                    {"name": "Status Entrega", "id": "Status"}
-                ],
-                style_table={'overflowX': 'auto'},
-                style_cell={'textAlign': 'center', 'backgroundColor': '#f9f9f9', 'color': 'black'},
-                style_header={'fontWeight': 'bold', 'backgroundColor': '#ffffff', 'color': 'black'},
+            # Tabela
+            dbc.Card(
+                dash_table.DataTable(
+                    id="tabela-processos",
+                    columns=[
+                        {"name": "ID", "id": "ID"},
+                        {"name": "Setores mapeados", "id": "Setores mapeados"},
+                        {"name": "Atividades mapeadas por setor", "id": "Atividades mapeadas"},
+                        {"name": "Instruções feitas pelo setor", "id": "Instruçoes feitas"},
+                        {"name": "Instruções reestruturadas", "id": "Instruçoes reestruturadas"},
+                        {"name": "Entrevistados", "id": "Qtd colaboradores entrevistados"},
+                        {"name": "% Concluído", "id": "% Concluído", "type": "numeric"},
+                        {"name": "Status Entrega", "id": "Status"},
+                        {"name": "Etapa / Entrega", "id": "Etapa / Entrega"},
+                    ],
+                    style_table={'overflowX': 'auto'},
+                    style_cell={'textAlign': 'center', 'backgroundColor': '#192A35', 'color': '#C2E0E7', 'whiteSpace': 'normal', 'height': 'auto'},
+                    style_header={'fontWeight': 'bold', 'backgroundColor': '#263640', 'color': '#C2E0E7'},
+                ),
+                style={
+                    "backgroundColor": "#192A35",
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }
             ),
-
-            html.Hr(),
 
             # Gráficos
             dbc.Row([
-                dbc.Col(dcc.Graph(id="grafico-atividades"), width=6),
-                dbc.Col(dcc.Graph(id="grafico-instrucoes"), width=6),
+                dbc.Col(dbc.Card(dcc.Graph(id="grafico-atividades-processos"), style={
+                    "backgroundColor": "#192A35",
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }), width=6),
+                dbc.Col(dbc.Card(dcc.Graph(id="grafico-instrucoes-processos"), style={
+                    "backgroundColor": "#192A35",
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }), width=6),
             ]),
+
             dbc.Row([
-                dbc.Col(dcc.Graph(id="grafico-entregas"), width=6),
-                dbc.Col(dcc.Graph(id="grafico-status"), width=6),
+                dbc.Col(dbc.Card(dcc.Graph(id="grafico-entregas-processos"), style={
+                    "backgroundColor": "#192A35",
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }), width=6),
+                dbc.Col(dbc.Card(dcc.Graph(id="grafico-status-processos"), style={
+                    "backgroundColor": "#192A35",
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }), width=6),
             ])
         ], width=10)
     ])
-], fluid=True)
+], fluid=True, style={"backgroundColor": "#121E26", "minHeight": "100vh", "padding": "20px"})
 
+
+# CALLBACKS
 @app.callback(
     Output("tabela-processos", "data"),
-    Output("grafico-atividades", "figure"),
-    Output("grafico-instrucoes", "figure"),
-    Output("grafico-entregas", "figure"),
-    Output("grafico-status", "figure"),
-    Input("filtro-setor", "value"),
-    Input("filtro-responsavel", "value"),
-    Input("filtro-status", "value")
+    Output("grafico-atividades-processos", "figure"),
+    Output("grafico-instrucoes-processos", "figure"),
+    Output("grafico-entregas-processos", "figure"),
+    Output("grafico-status-processos", "figure"),
+    Input("filtro-setor-processos", "value"),
+    Input("filtro-responsavel-processos", "value"),
+    Input("filtro-status-processos", "value")
 )
 def atualizar_tudo(f_setor, f_resp, f_status):
     dff = df.copy()
@@ -93,19 +128,44 @@ def atualizar_tudo(f_setor, f_resp, f_status):
 
     tabela = dff.to_dict('records')
 
-    # Gráfico atividades por setor
-    fig_ativ = px.bar(dff, x='Setores mapeados', y='Atividades mapeadas', title="Atividades Mapeadas por Setor")
+    # Gráfico Atividades Mapeadas por Setor
+    fig_ativ = px.bar(
+        dff, x='Setores mapeados', y='Atividades mapeadas',
+        title="Atividades Mapeadas por Setor", color='Setores mapeados',
+        text_auto=True, color_discrete_sequence=px.colors.sequential.Teal
+    )
 
-    # Gráfico instruções reestruturadas por Status Entrega
-    fig_instr = px.bar(dff, x='Instruçoes reestruturadas', y='Status', orientation='h', title="Instr. Reestruturadas por Status")
+    # Gráfico Instruções Reestruturadas
+    fig_instr = px.bar(
+        dff, x='Instruçoes reestruturadas', y='Status', orientation='h',
+        title="Instr. Reestruturadas por Status", color='Status',
+        color_discrete_sequence=px.colors.sequential.Teal
+    )
 
-    # Gráfico entregas concluídas por Etapa
-    fig_entregas = px.bar(dff, x='Status', title="Entregas Concluídas")
+    # Gráfico Entregas Concluídas por Etapa
+    fig_entregas = px.bar(
+        dff, x='Etapa / Entrega', title="Entregas Concluídas",
+        color='Etapa / Entrega',
+        color_discrete_sequence=px.colors.sequential.Teal
+    )
 
-    # Composição Status
-    fig_status = px.pie(dff, names='Status', hole=0.4, title="Composição Status")
+    # Gráfico Composição Status
+    fig_status = px.pie(
+        dff, names='Status', hole=0.5,
+        title="Composição Status",
+        color_discrete_sequence=px.colors.sequential.Teal
+    )
 
+    # Estilo dos Gráficos (Dark Theme)
     for fig in [fig_ativ, fig_instr, fig_entregas, fig_status]:
-        fig.update_layout(plot_bgcolor="#ffffff", paper_bgcolor="#ffffff", font_color="#000")
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font_color="#C2E0E7",
+            title_font_size=16,
+            title_x=0.5,
+            margin=dict(l=20, r=20, t=50, b=20),
+            font=dict(size=12)
+        )
 
     return tabela, fig_ativ, fig_instr, fig_entregas, fig_status

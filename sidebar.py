@@ -12,6 +12,7 @@ sidebar = html.Div(
             [
                 dbc.NavLink("BI Projetos", href="/projetos", active="exact"),
                 dbc.NavLink("BI Processos", href="/processos", active="exact"),
+                dbc.NavLink("BI Compliance", href="/compliance", active="exact"),
             ],
             vertical=True,
             pills=True,

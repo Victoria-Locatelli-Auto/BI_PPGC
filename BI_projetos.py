@@ -1,176 +1,203 @@
-import pandas as pd 
+import pandas as pd
 from dash import dcc, html, dash_table
 import plotly.express as px
-import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
-from datetime import datetime
+from app_instance import app
 
-from app_instance import app  # CERTO (importa o app sem ciclo)
+# Cores do tema
+COR_FUNDO = "#121E26"
+COR_CARD = "#192A35"
+COR_TEXTO = "#C2E0E7"
+COR_GRAFICO = px.colors.sequential.Teal
 
-# Carrega dados
-df = pd.read_excel("projeto.xlsx")
-df['Início'] = pd.to_datetime(df['Início'])
-df['Dias desde início'] = (datetime.today() - df['Início']).dt.days
-df['Atualizado em'] = datetime.today().strftime('%d/%m/%y')
+# Carregar dados
+df = pd.read_excel("Projetos.xlsx")
 
-# Cores por status
-cores_status = {
-    "Em Andamento": "#E48817",
-    "Concluído": "#71A54A",
-    "Atrasado": "#CE053C",
-    "Não iniciado": "#D6A78D"
-}
-ordem_status = ["Em Andamento", "Concluído", "Atrasado", "Não iniciado"]
+# Garantir que a coluna '% Concluído' seja numérica
+df["% Concluído"] = pd.to_numeric(df["% Concluído"], errors='coerce')
 
-def hex_to_rgba(hex_color, opacity):
-    hex_color = hex_color.lstrip('#')
-    r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
-    return f'rgba({r}, {g}, {b}, {opacity})'
-
-# Layout exportado para uso no app.py
+# Layout da página
 layout = dbc.Container([
     dbc.Row([
-        dbc.Col([
-            html.H4("📊 Visão Geral de Projetos", style={"color": "orange", "font-family":"system-ui"}),
-            html.Span(f"Dados atualizados em {df['Atualizado em'].iloc[0]}", style={"color": "orange"})
-        ], width=9),
-        dbc.Col(html.Img(src="assets/mcm_logo.webp", height="50px"),
-                width=3, className="d-flex justify-content-end align-items-center")
-    ], className="my-3"),
+        dbc.Col(html.H2("B.I PPGC - PROJETOS", className="text-center fw-bold text-light mb-4"))
+    ]),
 
     dbc.Row([
+        # Filtros laterais
         dbc.Col([
-            html.Label("Filtrar por Status:", className="text-light"),
-            dcc.Dropdown(
-                options=[{"label": s, "value": s} for s in sorted(df['Status'].unique())],
-                id="filtro-status", placeholder="Todos os Status", multi=True
-            ),
-        ], width=6),
+            html.Div([
+                html.Label("Status", className="fw-bold text-light"),
+                dcc.Dropdown(
+                    options=[{"label": s, "value": s} for s in sorted(df['Status'].dropna().unique())],
+                    id="filtro-status",
+                    placeholder="Todos",
+                    multi=True,
+                    className="mb-3"
+                ),
+            ], style={"backgroundColor": COR_CARD, "padding": "20px", "borderRadius": "10px"})
+        ], width=2),
+
+        # Conteúdo principal: tabela + gráficos
         dbc.Col([
-            html.Label("Filtrar por Projeto:", className="text-light"),
-            dcc.Dropdown(
-                options=[{"label": n, "value": n} for n in sorted(df['Nome do Projeto'].unique())],
-                id="filtro-projeto", placeholder="Todos os Projetos", multi=True
+            dbc.Card(
+                dash_table.DataTable(
+                    id="tabela-projetos",
+                    columns=[
+                        {"name": "ID", "id": "ID"},
+                        {"name": "Nome do Projeto", "id": "Nome do Projeto"},
+                        {"name": "Início", "id": "Início"},
+                        {"name": "Status", "id": "Status"},
+                        {"name": "% Concluído", "id": "% Concluído", "type": "numeric"},
+                    ],
+                    style_table={'overflowX': 'auto'},
+                    style_cell={
+                        'textAlign': 'center',
+                        'backgroundColor': COR_CARD,
+                        'color': COR_TEXTO,
+                        'whiteSpace': 'normal',
+                        'height': 'auto'
+                    },
+                    style_header={
+                        'fontWeight': 'bold',
+                        'backgroundColor': "#263640",
+                        'color': COR_TEXTO
+                    },
+                    page_size=10,
+                ),
+                style={
+                    "backgroundColor": COR_CARD,
+                    "borderRadius": "15px",
+                    "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                    "padding": "10px",
+                    "marginBottom": "20px"
+                }
             ),
-        ], width=6),
-    ], className="mb-4"),
 
-    dbc.Row(id="kpis", className="mb-4"),
+            dbc.Row([
+                # Gráfico de Rosca (Status)
+                dbc.Col(
+                    dbc.Card(
+                        dcc.Graph(id="grafico-distribuicao"),
+                        style={
+                            "backgroundColor": COR_CARD,
+                            "borderRadius": "15px",
+                            "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                            "padding": "10px",
+                            "marginBottom": "20px"
+                        }
+                    ),
+                    width=6
+                ),
+                # Gráfico de Barras (Status)
+                dbc.Col(
+                    dbc.Card(
+                        dcc.Graph(id="grafico-status"),
+                        style={
+                            "backgroundColor": COR_CARD,
+                            "borderRadius": "15px",
+                            "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                            "padding": "10px",
+                            "marginBottom": "20px"
+                        }
+                    ),
+                    width=6
+                )
+            ]),
 
-    dbc.Row([
-        dbc.Col(dcc.Graph(id="grafico-barra"), width=6),
-        dbc.Col(dcc.Graph(id="grafico-rosca"), width=6),
-    ], className="mb-4"),
+            dbc.Row([
+                # Gráfico Percentual de Conclusão
+                dbc.Col(
+                    dbc.Card(
+                        dcc.Graph(id="grafico-percentual"),
+                        style={
+                            "backgroundColor": COR_CARD,
+                            "borderRadius": "15px",
+                            "boxShadow": "0 0 10px rgba(0, 255, 255, 0.2)",
+                            "padding": "10px",
+                            "marginBottom": "20px"
+                        }
+                    ),
+                    width=12
+                )
+            ])
+        ], width=10)
+    ])
+], fluid=True, style={"backgroundColor": COR_FUNDO, "minHeight": "100vh", "padding": "20px"})
 
-    dash_table.DataTable(
-        id="tabela-projetos",
-        columns=[{"name": col, "id": col} for col in ['ID','Nome do Projeto','Início','Status', '% Concluído']],
-        style_table={'overflowX': 'auto'},
-        style_cell={'textAlign': 'left', 'backgroundColor': '#00183F', 'color': 'white'},
-        style_header={'fontWeight': 'bold', 'backgroundColor': '#00183F', 'color': 'white'},
-    ),
-    html.Div(id="total-projetos", className="text-end mt-2 fw-bold text-light")
-], fluid=True, style={"backgroundColor": "#00183F", "minHeight": "100vh", "padding": "20px"})
+# CALLBACKS
 
-# Callback que será registrado no app principal
 @app.callback(
-    Output("grafico-barra", "figure"),
-    Output("grafico-rosca", "figure"),
-    Output("kpis", "children"),
     Output("tabela-projetos", "data"),
-    Output("total-projetos", "children"),
-    Input("filtro-status", "value"),
-    Input("filtro-projeto", "value"),
-    Input("grafico-barra", "clickData"),
-    Input("grafico-rosca", "clickData")
+    Input("filtro-status", "value")
 )
-def atualizar_tudo(f_status, f_projeto, click_barra, click_rosca):
+def filtrar_tabela(f_status):
     dff = df.copy()
     if f_status:
         dff = dff[dff['Status'].isin(f_status)]
-    if f_projeto:
-        dff = dff[dff['Nome do Projeto'].isin(f_projeto)]
+    return dff.to_dict('records')
 
-    dff['% Concluído'] = dff['% Concluído'].astype(str).str.replace('%', '').str.strip()
-    dff['% Concluído'] = pd.to_numeric(dff['% Concluído'], errors='coerce')
+@app.callback(
+    Output("grafico-status", "figure"),
+    Output("grafico-distribuicao", "figure"),
+    Output("grafico-percentual", "figure"),
+    Input("tabela-projetos", "data"),
+)
+def atualizar_graficos(dados_tabela):
+    df_filtrado = pd.DataFrame(dados_tabela)
 
-    contagem = dff['Status'].value_counts().reindex(ordem_status).fillna(0).astype(int).reset_index()
-    contagem.columns = ['Status', 'Contagem']
+    if df_filtrado.empty:
+        empty_fig = px.scatter()
+        empty_fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font_color=COR_TEXTO,
+            title_font_size=16,
+            title_x=0.5,
+            margin=dict(l=20, r=20, t=50, b=20),
+            font=dict(size=12)
+        )
+        return empty_fig, empty_fig, empty_fig
 
-    status_clicado = None
-    if click_barra and 'points' in click_barra:
-        status_clicado = click_barra['points'][0]['y']
-    elif click_rosca and 'points' in click_rosca:
-        status_clicado = click_rosca['points'][0]['label']
+    # Contagem status para gráfico de barras
+    contagem_status = df_filtrado["Status"].value_counts().reset_index()
+    contagem_status.columns = ["Status", "Quantidade"]
 
-    cores_barras = []
-    cores_rosca = {}
-    for status in contagem['Status']:
-        cor_base = cores_status.get(status, "#1f77b4")
-        if status == status_clicado:
-            cores_barras.append(cor_base)
-            cores_rosca[status] = cor_base
-        else:
-            cor_opaca = hex_to_rgba(cor_base, 0.7)
-            cores_barras.append(cor_opaca)
-            cores_rosca[status] = cor_opaca
-
-    fig_barra = go.Figure()
-    fig_barra.add_trace(go.Bar(
-        x=contagem['Contagem'],
-        y=contagem['Status'],
-        orientation='h',
-        text=contagem['Contagem'],
-        textposition='auto',
-        marker_color=cores_barras
-    ))
-    fig_barra.update_layout(
-        title="Contagem de ID por Status",
-        plot_bgcolor="#00183F",
-        paper_bgcolor="#00183F",
-        font_color="#ffffff",
-        yaxis=dict(categoryorder="total ascending"),
-        showlegend=False
+    fig_status = px.bar(
+        contagem_status,
+        x="Status",
+        y="Quantidade",
+        labels={"Status": "Status", "Quantidade": "Quantidade"},
+        title="Composição de Status dos Projetos",
+        color_discrete_sequence=COR_GRAFICO
     )
 
-    fig_rosca = px.pie(contagem, names='Status', values='Contagem',
-                       hole=0.5, title="Contagem de ID por Status",
-                       color='Status', color_discrete_map=cores_rosca)
-    fig_rosca.update_traces(textinfo='percent+value')
-    fig_rosca.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#00183F",
-        font_color="#ffffff",
-        legend_title_text="Status"
+    fig_distribuicao = px.pie(
+        df_filtrado,
+        names="Status",
+        hole=0.5,
+        title="Distribuição de Projetos por Status",
+        color_discrete_sequence=COR_GRAFICO
     )
 
-    total = dff.shape[0]
-    media_concluido = dff['% Concluído'].mean() if total > 0 else 0
-    media_dias = dff['Dias desde início'].mean() if total > 0 else 0
+    fig_percentual = px.bar(
+        df_filtrado,
+        x="Nome do Projeto",
+        y="% Concluído",
+        title="Percentual de Conclusão por Projeto",
+        color_discrete_sequence=COR_GRAFICO
+    )
+    fig_percentual.update_layout(xaxis_tickangle=-45)
 
-    kpis = dbc.Row([
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Total de Projetos", className="text-muted"),
-            html.H3(f"{total}", className="text-primary")
-        ])), width=4),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("% Projetos Concluído", className="text-muted"),
-            html.H3(f"{media_concluido:.1f}%", className="text-success")
-        ])), width=4),
-        dbc.Col(dbc.Card(dbc.CardBody([
-            html.H6("Tempo médio desde início", className="text-muted"),
-            html.H3(f"{media_dias:.0f} dias", className="text-info")
-        ])), width=4),
-    ])
+    for fig in [fig_status, fig_distribuicao, fig_percentual]:
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font_color=COR_TEXTO,
+            title_font_size=16,
+            title_x=0.5,
+            margin=dict(l=20, r=20, t=50, b=20),
+            font=dict(size=12)
+        )
 
-    tabela = dff[['ID', 'Nome do Projeto', 'Início', 'Status', '% Concluído']].to_dict('records')
-    for linha in tabela:
-        if isinstance(linha['Início'], pd.Timestamp):
-            linha['Início'] = linha['Início'].strftime('%d/%m/%y')
-        else:
-            linha['Início'] = str(linha['Início'])
-
-    total_texto = f"Total: {total}"
-
-    return fig_barra, fig_rosca, kpis, tabela, total_texto
+    return fig_status, fig_distribuicao, fig_percentual
